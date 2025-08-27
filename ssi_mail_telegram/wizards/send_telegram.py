@@ -133,7 +133,6 @@ class SendTelegram(models.TransientModel):
         latest_history = self.env["webhook_history"].search(
             [
                 ("webhook_id", "=", webhook.id),
-                ("state", "=", "success"),
             ],
             limit=1,
             order="id desc",
@@ -151,16 +150,32 @@ class SendTelegram(models.TransientModel):
             except json.JSONDecodeError:
                 pass
 
-        telegram_message_id = self._get_telegram_message_id(latest_history)
-        if telegram_message_id:
-            MailMessageTelegram.create(
-                self._prepare_mail_message_telegram_data(telegram_message_id)
-            )
-        else:
-            msg_err = _("Failed to get telegram_message_id from webhook response.")
-            raise UserError(msg_err)
+        if latest_history.state == "success":
+            telegram_message_id = self._get_telegram_message_id(latest_history)
+            if telegram_message_id:
+                MailMessageTelegram.create(
+                    self._prepare_mail_message_telegram_data(telegram_message_id)
+                )
+            else:
+                msg_err = _("Failed to get telegram_message_id from webhook response.")
+                raise UserError(msg_err)
 
-        return {
-            "type": "ir.actions.client",
-            "tag": "reload",
-        }
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+        else:
+            error_message = _(
+                "Failed to send message to Telegram. "
+                "Please check the webhook configuration and try again."
+            )
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": _("Telegram Send Failed"),
+                    "message": error_message,
+                    "type": "danger",
+                    "sticky": False,
+                },
+            }
