@@ -5,4 +5,5 @@ from . import (
     telegram_backend,
     telegram_backend_chat,
     res_company,
+    res_partner,
 )
