@@ -1,1 +1,3 @@
 odoo14-addon-ssi-partner
+odoo14-addon-ssi-backend-mixin
+odoo14-addon-ssi-webhook
