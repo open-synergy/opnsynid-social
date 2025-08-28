@@ -10,6 +10,8 @@ setuptools.setup(
     install_requires=[
         'odoo14-addon-ssi_mail',
         'odoo14-addon-ssi_mail_optional_related_attachment',
+        'odoo14-addon-ssi_mail_telegram',
+        'odoo14-addon-ssi_telegram',
     ],
     classifiers=[
         'Programming Language :: Python',
