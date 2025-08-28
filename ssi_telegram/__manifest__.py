@@ -20,6 +20,7 @@
         "data/sequence_template_data.xml",
         "menu.xml",
         "views/telegram_backend_views.xml",
+        "views/telegram_backend_chat_views.xml",
         "views/res_company_views.xml",
         "views/res_partner_views.xml",
     ],
