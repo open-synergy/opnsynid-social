@@ -124,7 +124,7 @@ class SendTelegram(models.TransientModel):
             "bot_token": self.backend_id.bot_token,
         }
 
-        webhook = self.backend_id.send_webhook_id
+        webhook = self.backend_id.send_webhook_id.sudo()
         webhook.with_context(ctx)._run_webhook()
 
         self.env.cr.commit()
