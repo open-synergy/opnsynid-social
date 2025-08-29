@@ -20,8 +20,8 @@ addon | version | maintainers | summary
 --- | --- | --- | ---
 [ssi_mail](ssi_mail/) | 14.0.1.1.0 |  | Mail App
 [ssi_mail_optional_related_attachment](ssi_mail_optional_related_attachment/) | 14.0.1.0.1 |  | Optionaly Attach Related Attachment
-[ssi_mail_telegram](ssi_mail_telegram/) | 14.0.1.0.0 |  | SSI - Mail Telegram
-[ssi_telegram](ssi_telegram/) | 14.0.1.2.0 |  | SSI - Telegram
+[ssi_mail_telegram](ssi_mail_telegram/) | 14.0.1.1.0 |  | SSI - Mail Telegram
+[ssi_telegram](ssi_telegram/) | 14.0.1.3.0 |  | SSI - Telegram
 
 [//]: # (end addons)
 
