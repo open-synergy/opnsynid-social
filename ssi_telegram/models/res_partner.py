@@ -9,7 +9,7 @@ class ResPartner(models.Model):
 
     telegram_username = fields.Char(
         string="Telegram Username",
-        help="Enter the Telegram username without '@' symbol. "
+        help="Enter the Telegram username with '@' symbol. "
         "This will be used to identify the user in Telegram communications. "
-        "Example: 'johndoe' instead of '@johndoe'",
+        "Example: '@johndoe'",
     )
