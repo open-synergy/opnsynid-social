@@ -12,7 +12,7 @@
         <xpath expr="//field[@name='category_id']" position="after">
             <field
                     name="telegram_username"
-                    placeholder="e.g. johndoe (without @ symbol)"
+                    placeholder="e.g. @johndoe (with @ symbol)"
                 />
         </xpath>
     </field>
