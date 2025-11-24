@@ -1,43 +1,56 @@
 import base64
 
-from odoo import http
+from werkzeug.exceptions import BadRequest
+
+from odoo import http, tools
 from odoo.http import request
+from odoo.tools import consteq
 
 
 class MailTrackingController(http.Controller):
-    """HTTP endpoints for mail tracking.
+    """HTTP endpoints for mail open tracking.
 
-    Currently provides:
-    - /mail/tracking/open/<token>  -> 1x1 transparent GIF
+    Meniru pola mass_mailing, tetapi untuk mail.trace (email biasa).
     """
 
     # 1x1 transparent GIF (standard) in base64
-    _TRANSPARENT_GIF_BASE64 = "R0lGODlhAQABAPAAAP///wAAACwAAAAAAQABAEACAkQBADs="
+    _TRANSPARENT_GIF_BASE64 = (
+        "R0lGODlhAQABAIAAANvf7wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+    )
 
     @http.route(
-        "/mail/tracking/open/<string:token>",
+        "/mail/trace/<int:mail_id>/<string:token>/blank.gif",
         type="http",
         auth="public",
         csrf=False,
     )
-    def mail_tracking_open(self, token, **kwargs):
-        """Route called when the tracking pixel is loaded.
+    def mail_trace_open(self, mail_id, token, **kwargs):
+        """Route dipanggil ketika tracking pixel di-load.
 
-        This route:
-        - Updates tracking status on mail.mail,
-        - Returns a transparent 1x1 GIF to the client.
+        - Validasi token dengan HMAC (ala mass_mailing).
+        - Panggil mail.trace.set_opened() untuk mail_mail_id terkait.
+        - Kembalikan GIF transparan 1x1.
         """
-        # Update tracking status
-        request.env["mail.mail"]._update_tracking_on_open(token)
+        expected = tools.hmac(
+            request.env(su=True),
+            "mail-trace-open",
+            mail_id,
+        )
+        if not consteq(token, expected):
+            # Token tidak valid -> jangan catat apa-apa
+            raise BadRequest()
 
-        # Return transparent GIF
+        # Update mail.trace dan sinkron ke mail.mail
+        request.env["mail.trace"].sudo().set_opened(
+            mail_mail_ids=[mail_id],
+        )
+
         image_bytes = base64.b64decode(self._TRANSPARENT_GIF_BASE64)
         headers = [
             ("Content-Type", "image/gif"),
             ("Content-Length", str(len(image_bytes))),
-            # Cache controls to avoid over-caching in some proxies/clients
             ("Cache-Control", "no-cache, no-store, must-revalidate"),
             ("Pragma", "no-cache"),
             ("Expires", "0"),
         ]
-        return request.make_response(image_bytes, headers=headers)
+        return request.make_response(image_bytes, headers)
