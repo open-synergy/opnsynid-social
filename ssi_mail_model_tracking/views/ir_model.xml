@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+<!-- Inherit the ir.model form view to add "Track Emails" toggle -->
+<record id="ir_model_view_form" model="ir.ui.view">
+    <field name="name">ir.model - form</field>
+    <field name="model">ir.model</field>
+    <field name="inherit_id" ref="base.view_model_form" />
+    <field name="arch" type="xml">
+        <xpath expr="//notebook" position="inside">
+            <page name="mail" string="Mail Tracking">
+                <group>
+                    <field name="track_email" widget="boolean_toggle" />
+                </group>
+            </page>
+        </xpath>
+    </field>
+</record>
+
+</odoo>
