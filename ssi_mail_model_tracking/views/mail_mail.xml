@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+<record id="mail_mail_view_form" model="ir.ui.view">
+    <field name="name">mail.mail - form</field>
+    <field name="model">mail.mail</field>
+    <field name="inherit_id" ref="mail.view_mail_form" />
+    <field name="arch" type="xml">
+        <xpath expr="//sheet/group[1]" position="after">
+            <group string="Tracking">
+                <field name="tracking_enabled" readonly="1" />
+                <field name="tracking_token" readonly="1" />
+                <field name="tracking_opened" readonly="1" />
+                <field name="tracking_opened_datetime" readonly="1" />
+                <field name="tracking_open_count" readonly="1" />
+            </group>
+        </xpath>
+    </field>
+</record>
+</odoo>
