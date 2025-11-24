@@ -1,7 +1,8 @@
 import logging
-import uuid
 
-from odoo import api, fields, models
+import werkzeug.urls
+
+from odoo import fields, models, tools
 
 _logger = logging.getLogger(__name__)
 
@@ -9,6 +10,7 @@ _logger = logging.getLogger(__name__)
 class MailMail(models.Model):
     _inherit = "mail.mail"
 
+    # Field tracking dari versi sebelumnya tetap dipertahankan
     tracking_enabled = fields.Boolean(
         string="Tracking Enabled",
         help="Indicates that this mail includes an open-tracking pixel.",
@@ -16,7 +18,10 @@ class MailMail(models.Model):
     )
     tracking_token = fields.Char(
         string="Tracking Token",
-        help="Unique token used by the tracking pixel URL.",
+        help=(
+            "Legacy token used by the tracking pixel URL. "
+            "Kept for compatibility; new implementation uses HMAC on ID."
+        ),
         readonly=True,
         index=True,
     )
@@ -53,6 +58,10 @@ class MailMail(models.Model):
         help="Effective tracking mode decided at template level for this mail.",
     )
 
+    # -------------------------------------------------------------------------
+    # Keputusan: perlu tracking atau tidak (kombinasi model + template)
+    # -------------------------------------------------------------------------
+
     def _get_related_model_name(self):
         """Return the business model name associated with this mail.
 
@@ -79,14 +88,14 @@ class MailMail(models.Model):
         """
         self.ensure_one()
 
-        # 1) Per-template override has highest priority when present
+        # 1) Per-template override
         template_mode = self.tracking_template_mode
         if template_mode == "force_on":
             return True
         if template_mode == "force_off":
             return False
 
-        # 2) Fall back to per-model toggle when template is 'model' or not set
+        # 2) Fallback ke per-model toggle
         model_name = self._get_related_model_name()
         if not model_name:
             return False
@@ -102,103 +111,101 @@ class MailMail(models.Model):
             )
             return False
 
-    def _get_tracking_pixel_url(self, token):
-        """Build absolute URL for the tracking pixel based on web.base.url."""
+    # -------------------------------------------------------------------------
+    # URL tracking ala mass_mailing (HMAC + /mail/trace/<id>/<token>/blank.gif)
+    # -------------------------------------------------------------------------
+
+    def _get_tracking_pixel_url(self):
+        """Build absolute URL for the tracking pixel based on web.base.url.
+
+        Menggunakan HMAC pada ID, mirip mass_mailing untuk menghindari
+        pemalsuan token.
+        """
+        self.ensure_one()
         base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
-        if not base_url:
-            # Fallback: relative URL (less ideal in emails, but still functional
-            # in some clients). We do not block sending if base_url is missing.
-            return "/mail/tracking/open/%s" % token
-        if not base_url.endswith("/"):
-            base_url += "/"
-        return "%smail/tracking/open/%s" % (base_url, token)
 
-    def _inject_tracking_pixel(self):
-        """Inject tracking pixel into HTML body if not already present.
+        # Salt khusus modul ini, jangan sama dengan mass_mailing
+        token = tools.hmac(
+            self.env(su=True),
+            "mail-trace-open",
+            self.id,
+        )
 
-        This method:
-        - Generates a token if missing,
-        - Builds the pixel URL,
-        - Appends an <img> tag to body_html,
-        - Marks tracking_enabled = True.
+        path = "mail/trace/%s/%s/blank.gif" % (self.id, token)
+        if base_url:
+            if not base_url.endswith("/"):
+                base_url += "/"
+            return werkzeug.urls.url_join(base_url, path)
+        # Fallback relatif (sebagian client mungkin tidak suka, tapi aman)
+        return "/" + path
+
+    def _ensure_mail_trace(self):
+        """Pastikan ada record mail.trace untuk mail ini.
+
+        Sederhana: satu trace per mail.mail. Status awal = 'sent'.
         """
-        for mail in self:
-            if not mail.body_html:
-                # We only handle HTML bodies; do not try to convert plain text.
-                continue
-
-            # Generate token once per mail
-            if not mail.tracking_token:
-                mail.tracking_token = uuid.uuid4().hex
-
-            pixel_url = mail._get_tracking_pixel_url(mail.tracking_token)
-
-            # Avoid injecting the same pixel multiple times
-            if pixel_url in mail.body_html:
-                mail.tracking_enabled = True
-                continue
-
-            pixel_img = (
-                '<img src="{url}" alt="" '
-                'style="width:1px;height:1px;display:none;" />'
-            ).format(url=pixel_url)
-
-            # Simple strategy: append at the end of the HTML body
-            mail.body_html = (mail.body_html or "") + pixel_img
-            mail.tracking_enabled = True
-
-    @api.model
-    def _update_tracking_on_open(self, token):
-        """Called by HTTP controller when tracking pixel is loaded.
-
-        - Locate mail.mail by token,
-        - Mark as opened (first time),
-        - Increment open counter.
-        """
-        if not token:
-            return
-
-        mail = self.sudo().search(
+        self.ensure_one()
+        Trace = self.env["mail.trace"].sudo()
+        trace = Trace.search(
             [
-                ("tracking_token", "=", token),
+                ("mail_mail_id", "=", self.id),
             ],
             limit=1,
         )
-        if not mail:
-            return
+        if trace:
+            return trace
 
-        values = {
-            "tracking_open_count": mail.tracking_open_count + 1,
+        # Ambil alamat email utama dari mail.mail
+        email = self.email_to or False
+        if not email and self.partner_ids:
+            email = self.partner_ids[0].email or False
+
+        now = fields.Datetime.now()
+        trace_vals = {
+            "mail_mail_id": self.id,
+            "email": email,
+            "state": "sent",
+            "scheduled": now,
+            "sent": now,
+            "message_id": self.message_id,
         }
-        if not mail.tracking_opened:
-            values.update(
-                {
-                    "tracking_opened": True,
-                    "tracking_opened_datetime": fields.Datetime.now(),
-                }
-            )
-        mail.write(values)
+        return Trace.create(trace_vals)
 
-    def send(self, auto_commit=False, raise_exception=False):
-        """Override send() to inject tracking pixel when enabled.
+    # -------------------------------------------------------------------------
+    # Override _send_prepare_body (ala mass_mailing) untuk inject pixel
+    # -------------------------------------------------------------------------
 
-        - For each mail, decide tracking using the combined logic:
-          template override > model toggle.
-        - If enabled, inject tracking pixel into body_html.
-        - Then call super().send().
+    def _send_prepare_body(self):
+        """Inject tracking pixel ala mass_mailing untuk email biasa.
+
+        - Dipanggil per record oleh mail.mail._send().
+        - Tidak mengganggu mass_mailing (yang memakai mailing_id sendiri).
         """
-        for mail in self:
-            try:
-                if mail._should_enable_tracking_for_mail():
-                    mail._inject_tracking_pixel()
-            except Exception as exc:
-                # Tracking must never block email delivery.
-                _logger.warning(
-                    "Failed to inject tracking pixel for mail ID %s: %s",
-                    mail.id,
-                    exc,
+        self.ensure_one()
+        body = super()._send_prepare_body()
+
+        # Jangan ganggu email mass_mailing; mereka punya tracking sendiri
+        if getattr(self, "mailing_id", False):
+            return body
+
+        try:
+            if body and self._should_enable_tracking_for_mail():
+                pixel_url = self._get_tracking_pixel_url()
+                # Mirip mass_mailing: sisipkan img ke HTML
+                body = tools.append_content_to_html(
+                    body,
+                    '<img src="%s" alt="" style="width:1px;height:1px;display:none;"/>'  # noqa: E501
+                    % pixel_url,
+                    plaintext=False,
                 )
-        return super().send(
-            auto_commit=auto_commit,
-            raise_exception=raise_exception,
-        )
+                self.tracking_enabled = True
+                # Buat trace untuk email ini
+                self._ensure_mail_trace()
+        except Exception as exc:
+            # Tracking tidak boleh menghalangi pengiriman email
+            _logger.warning(
+                "Failed to inject tracking pixel for mail ID %s: %s",
+                self.id,
+                exc,
+            )
+        return body

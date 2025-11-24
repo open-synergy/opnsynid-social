@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+
+        <!-- Tree view: mirip Mailing Traces -->
+        <record id="mail_trace_view_tree" model="ir.ui.view">
+            <field name="name">mail.trace.view.tree</field>
+            <field name="model">mail.trace</field>
+            <field name="arch" type="xml">
+                <tree string="Mail Traces" create="0" delete="0">
+                    <field name="mail_mail_id" />
+                    <field name="email" />
+                    <field name="state" />
+                    <field name="message_id" />
+                    <field name="scheduled" />
+                    <field name="sent" />
+                    <field name="opened" />
+                    <field name="clicked" />
+                    <field name="replied" />
+                    <field name="bounced" />
+                    <field name="ignored" />
+                    <field name="exception" />
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form view sederhana -->
+        <record id="mail_trace_view_form" model="ir.ui.view">
+            <field name="name">mail.trace.view.form</field>
+            <field name="model">mail.trace</field>
+            <field name="arch" type="xml">
+                <form string="Mail Trace">
+                    <sheet>
+                        <group>
+                            <field name="mail_mail_id" />
+                            <field name="email" />
+                            <field name="state" />
+                        </group>
+                        <group>
+                            <field name="message_id" />
+                            <field name="scheduled" />
+                            <field name="sent" />
+                            <field name="opened" />
+                            <field name="clicked" />
+                            <field name="replied" />
+                            <field name="bounced" />
+                            <field name="ignored" />
+                            <field name="exception" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="mail_trace_action" model="ir.actions.act_window">
+            <field name="name">Mail Traces</field>
+            <field name="res_model">mail.trace</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Monitor open tracking untuk email biasa.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu di bawah Technical / Email (mirip Mailing Traces) -->
+        <menuitem
+            id="menu_mail_trace"
+            name="Mail Traces"
+            parent="base.menu_email"
+            action="mail_trace_action"
+            groups="base.group_system"
+        />
+
+    </data>
+</odoo>
