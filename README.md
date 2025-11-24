@@ -19,7 +19,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [ssi_mail](ssi_mail/) | 14.0.1.1.0 |  | Mail App
-[ssi_mail_model_tracking](ssi_mail_model_tracking/) | 14.0.1.1.0 |  | Track email opens per model using a toggle on ir.model.
+[ssi_mail_model_tracking](ssi_mail_model_tracking/) | 14.0.1.2.0 |  | Track email opens per model using a toggle on ir.model.
 [ssi_mail_optional_related_attachment](ssi_mail_optional_related_attachment/) | 14.0.1.0.1 |  | Optionaly Attach Related Attachment
 [ssi_mail_telegram](ssi_mail_telegram/) | 14.0.1.1.0 |  | SSI - Mail Telegram
 [ssi_telegram](ssi_telegram/) | 14.0.1.4.0 |  | SSI - Telegram

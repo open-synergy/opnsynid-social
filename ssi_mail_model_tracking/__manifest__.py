@@ -1,7 +1,7 @@
 {
     "name": "SSI Mail Model Tracking",
     "summary": "Track email opens per model using a toggle on ir.model.",
-    "version": "14.0.1.1.0",
+    "version": "14.0.1.2.0",
     "category": "Tools",
     "author": "PT. Simetri Sinergi Indonesia",
     "website": "https://simetri-sinergi.id",
