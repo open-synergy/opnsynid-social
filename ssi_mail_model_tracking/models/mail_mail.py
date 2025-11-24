@@ -35,6 +35,23 @@ class MailMail(models.Model):
         help="Number of times the tracking pixel has been loaded.",
         readonly=True,
     )
+    tracking_template_id = fields.Many2one(
+        comodel_name="mail.template",
+        string="Tracking Template",
+        readonly=True,
+        help="Email template that determined tracking behavior for this mail, "
+        "when applicable.",
+    )
+    tracking_template_mode = fields.Selection(
+        selection=[
+            ("model", "Use Model Setting"),
+            ("force_on", "Always Track (override model)"),
+            ("force_off", "Never Track (override model)"),
+        ],
+        string="Template Tracking Mode",
+        readonly=True,
+        help="Effective tracking mode decided at template level for this mail.",
+    )
 
     def _get_related_model_name(self):
         """Return the business model name associated with this mail.
@@ -53,11 +70,23 @@ class MailMail(models.Model):
     def _should_enable_tracking_for_mail(self):
         """Decide whether tracking should be enabled for this mail.
 
-        Logic:
-        - Find related business model.
-        - Check ir.model.track_email for that model.
+        Priority:
+        1. Template override (tracking_template_mode):
+           - force_on  -> always True
+           - force_off -> always False
+        2. Model setting (ir.model.track_email) when template mode is 'model'
+           or not set.
         """
         self.ensure_one()
+
+        # 1) Per-template override has highest priority when present
+        template_mode = self.tracking_template_mode
+        if template_mode == "force_on":
+            return True
+        if template_mode == "force_off":
+            return False
+
+        # 2) Fall back to per-model toggle when template is 'model' or not set
         model_name = self._get_related_model_name()
         if not model_name:
             return False
@@ -151,10 +180,11 @@ class MailMail(models.Model):
         mail.write(values)
 
     def send(self, auto_commit=False, raise_exception=False):
-        """Override send() to inject tracking pixel when enabled per model.
+        """Override send() to inject tracking pixel when enabled.
 
-        - For each mail, check ir.model.track_email on its business model.
-        - If True, inject tracking pixel into body_html.
+        - For each mail, decide tracking using the combined logic:
+          template override > model toggle.
+        - If enabled, inject tracking pixel into body_html.
         - Then call super().send().
         """
         for mail in self:
