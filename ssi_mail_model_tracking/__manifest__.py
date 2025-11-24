@@ -13,6 +13,7 @@
     "data": [
         "views/ir_model.xml",
         "views/mail_mail.xml",
+        "views/mail_template.xml",
     ],
     "installable": True,
     "application": False,
