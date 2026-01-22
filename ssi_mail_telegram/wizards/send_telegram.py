@@ -44,6 +44,7 @@ class SendTelegram(models.TransientModel):
         relation="rel_send_telegram_2_backend_chat",
         column1="wizard_id",
         column2="chat_id",
+        compute_sudo=True,
     )
 
     chat_id = fields.Many2one(
