@@ -23,6 +23,7 @@ addon | version | maintainers | summary
 [ssi_mail_optional_related_attachment](ssi_mail_optional_related_attachment/) | 14.0.1.0.1 |  | Optionaly Attach Related Attachment
 [ssi_mail_telegram](ssi_mail_telegram/) | 14.0.1.2.0 |  | SSI - Mail Telegram
 [ssi_telegram](ssi_telegram/) | 14.0.1.4.0 |  | SSI - Telegram
+[ssi_telegram_notify](ssi_telegram_notify/) | 14.0.1.0.0 |  | Send Odoo thread notifications to users via Telegram Bot
 
 [//]: # (end addons)
 
