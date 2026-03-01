@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+
+    <!--
+        Initialise the Telegram Bot token system parameter.
+        Set `telegram.bot.token` to your actual bot token via:
+          Settings > Technical > Parameters > System Parameters
+        or by using the Odoo shell:
+          env['ir.config_parameter'].set_param('telegram.bot.token', '<YOUR_TOKEN>')
+    -->
+    <record id="param_telegram_bot_token" model="ir.config_parameter">
+        <field name="key">telegram.bot.token</field>
+        <field name="value" />
+    </record>
+
+</odoo>
