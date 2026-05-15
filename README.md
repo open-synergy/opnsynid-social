@@ -14,7 +14,11 @@ opnsynid-social
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[mail_sendgrid](mail_sendgrid/) | 11.0.1.0.2 |  | SendGrid
 
 [//]: # (end addons)
 
